@@ -25,6 +25,7 @@ import { InputManagerService, InputHandler } from './core/services/input.service
 })
 export class App implements InputHandler {
   @ViewChild('nesCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
   
   private storageService = inject(StorageService);
   private emulatorService = inject(EmulatorService);
@@ -42,9 +43,26 @@ export class App implements InputHandler {
   hasSavedState = signal(false);
 
   availableGames = signal<Game[]>([
+    // Working Homebrew Games
     { id: '1', title: 'Driar (Platformer)', url: '/roms/driar.nes' },
     { id: '2', title: 'Flappy Bird (Arcade)', url: '/roms/flappybird.nes' },
     { id: '3', title: 'Lala the Magical (Adventure)', url: '/roms/lala.nes' },
+    // Missing classic ROMs (Require user to upload)
+    { id: 'smb3', title: 'Super Mario Bros. 3', url: '/roms/super_mario_bros_3.nes', isPlaceholder: true },
+    { id: 'zelda', title: 'The Legend of Zelda', url: '/roms/legend_of_zelda.nes', isPlaceholder: true },
+    { id: 'contra', title: 'Contra', url: '/roms/contra.nes', isPlaceholder: true },
+    { id: 'smb', title: 'Super Mario Bros.', url: '/roms/super_mario_bros.nes', isPlaceholder: true },
+    { id: 'mm2', title: 'Mega Man 2', url: '/roms/mega_man_2.nes', isPlaceholder: true },
+    { id: 'punchout', title: 'Mike Tyson\'s Punch-Out!!', url: '/roms/punch_out.nes', isPlaceholder: true },
+    { id: 'cv3', title: 'Castlevania III: Dracula\'s Curse', url: '/roms/castlevania_3.nes', isPlaceholder: true },
+    { id: 'metroid', title: 'Metroid', url: '/roms/metroid.nes', isPlaceholder: true },
+    { id: 'tetris', title: 'Tetris', url: '/roms/tetris.nes', isPlaceholder: true },
+    { id: 'ducktales', title: 'DuckTales', url: '/roms/ducktales.nes', isPlaceholder: true },
+    { id: 'ng', title: 'Ninja Gaiden', url: '/roms/ninja_gaiden.nes', isPlaceholder: true },
+    { id: 'kirby', title: 'Kirby\'s Adventure', url: '/roms/kirbys_adventure.nes', isPlaceholder: true },
+    { id: 'ff', title: 'Final Fantasy', url: '/roms/final_fantasy.nes', isPlaceholder: true },
+    { id: 'bc', title: 'Bionic Commando', url: '/roms/bionic_commando.nes', isPlaceholder: true },
+    { id: 'smb2', title: 'Super Mario Bros. 2', url: '/roms/super_mario_bros_2.nes', isPlaceholder: true }
   ]);
   
   isLoading = signal(false);
@@ -106,16 +124,25 @@ export class App implements InputHandler {
     this.startROM(romData, file.name);
   }
 
-  async loadGameFromUrl(url: string, id: string) {
+  async loadGameFromUrl(game: Game) {
+    if (game.isPlaceholder) {
+      if (this.fileInputRef) {
+        // Clear any previous error and trigger file picker
+        this.loadError.set(`Please provide your own legally obtained ROM file for ${game.title}.`);
+        this.fileInputRef.nativeElement.click();
+      }
+      return;
+    }
+
     this.isLoading.set(true);
     this.loadError.set('');
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Could not load ROM. Did you place ${url}?`);
+      const response = await fetch(game.url);
+      if (!response.ok) throw new Error(`Could not load ROM. Did you place ${game.url}?`);
       const buffer = await response.arrayBuffer();
       const romData = Array.from(new Uint8Array(buffer)).map(byte => String.fromCharCode(byte)).join('');
       
-      this.startROM(romData, id);
+      this.startROM(romData, game.id);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Error loading ROM';
       this.loadError.set(msg);
