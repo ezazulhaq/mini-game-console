@@ -134,38 +134,23 @@
         <div class="mt-8 sm:mt-12 flex flex-1 flex-col justify-between">
           <div class="flex items-start justify-between px-2">
           
-          <!-- D-Pad -->
-          <div class="relative h-28 w-28 sm:h-32 sm:w-32">
-            <button 
-              aria-label="Up"
-              (touchstart)="onButtonDown(c.BUTTON_UP, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_UP, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_UP, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_UP, $event)"
-              class="absolute left-1/2 top-0 h-10 sm:h-10 w-10 sm:w-10 -translate-x-1/2 rounded-t bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-start justify-center pt-1"></button>
-            <button 
-              aria-label="Down"
-              (touchstart)="onButtonDown(c.BUTTON_DOWN, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_DOWN, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_DOWN, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_DOWN, $event)"
-              class="absolute bottom-0 left-1/2 h-10 w-10 -translate-x-1/2 rounded-b bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-end justify-center pb-1"></button>
-            <button 
-              aria-label="Left"
-              (touchstart)="onButtonDown(c.BUTTON_LEFT, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_LEFT, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_LEFT, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_LEFT, $event)"
-              class="absolute left-0 top-1/2 h-10 w-10 -translate-y-1/2 rounded-l bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-center justify-start pl-1"></button>
-            <button 
-              aria-label="Right"
-              (touchstart)="onButtonDown(c.BUTTON_RIGHT, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_RIGHT, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_RIGHT, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_RIGHT, $event)"
-              class="absolute right-0 top-1/2 h-10 w-10 -translate-y-1/2 rounded-r bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-center justify-end pr-1"></button>
-            <div class="absolute left-1/2 top-1/2 h-10 w-10 sm:h-12 sm:w-12 -translate-x-1/2 -translate-y-1/2 rounded bg-zinc-800 pointer-events-none"></div>
-            <div class="absolute left-1/2 top-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-700/50 bg-zinc-800 shadow-inner pointer-events-none"></div>
+          <!-- Analog Joystick (Potentiometer) -->
+          <div class="relative h-28 w-28 sm:h-32 sm:w-32 rounded-full border-4 border-zinc-800 bg-zinc-900 shadow-inner flex items-center justify-center touch-none">
+            <div 
+              (touchstart)="onJoystickStart($event)"
+              (touchmove)="onJoystickMove($event)"
+              (touchend)="onJoystickEnd($event)"
+              (touchcancel)="onJoystickEnd($event)"
+              (mousedown)="onJoystickStart($event)"
+              (mousemove)="onJoystickMove($event)"
+              (mouseup)="onJoystickEnd($event)"
+              (mouseleave)="onJoystickEnd($event)"
+              class="absolute h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-zinc-700 border-b-4 border-zinc-900 shadow-[inset_0_4px_4px_rgba(255,255,255,0.1),_0_8px_16px_rgba(0,0,0,0.5)] cursor-pointer touch-none z-10"
+              [style.transform]="'translate(' + joystickPos().x + 'px, ' + joystickPos().y + 'px)'"
+              style="will-change: transform;">
+              <div class="absolute inset-2 rounded-full border border-zinc-600/50"></div>
+              <div class="absolute inset-4 rounded-full border border-zinc-600/30"></div>
+            </div>
           </div>
 
           <!-- A/B Buttons -->

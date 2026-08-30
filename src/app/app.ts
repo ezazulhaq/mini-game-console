@@ -36,6 +36,12 @@ export class App {
   isPaused = signal(false);
   deferredPrompt = signal<Event | null>(null);
   isTouchDevice = signal(true);
+  
+  joystickPos = signal({ x: 0, y: 0 });
+  private activeJoyDirs = new Set<number>();
+  private isDraggingJoy = false;
+  private readonly JOYSTICK_RADIUS = 35;
+  private readonly JOYSTICK_DEADZONE = 10;
 
   currentGameId = signal<string | null>(null);
   hasSavedState = signal(false);
@@ -341,5 +347,82 @@ export class App {
 
   get c() {
     return Controller;
+  }
+
+  // Joystick Handlers
+  onJoystickStart(e: TouchEvent | MouseEvent) {
+    if (e.cancelable) e.preventDefault();
+    this.isDraggingJoy = true;
+    this.handleJoystickEvent(e);
+  }
+
+  onJoystickMove(e: TouchEvent | MouseEvent) {
+    if (!this.isDraggingJoy) return;
+    if (e.cancelable) e.preventDefault();
+    this.handleJoystickEvent(e);
+  }
+
+  onJoystickEnd(e: TouchEvent | MouseEvent) {
+    if (e && e.type !== 'mouseleave' && e.cancelable) e.preventDefault();
+    this.isDraggingJoy = false;
+    this.joystickPos.set({ x: 0, y: 0 });
+    this.updateJoystickButtons(0, 0);
+  }
+
+  private handleJoystickEvent(e: TouchEvent | MouseEvent) {
+    const target = (e.currentTarget as HTMLElement).parentElement;
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let clientX, clientY;
+    if (window.TouchEvent && e instanceof TouchEvent) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = (e as MouseEvent).clientX;
+      clientY = (e as MouseEvent).clientY;
+    }
+
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > this.JOYSTICK_RADIUS) {
+      const ratio = this.JOYSTICK_RADIUS / distance;
+      dx *= ratio;
+      dy *= ratio;
+    }
+
+    this.joystickPos.set({ x: dx, y: dy });
+    this.updateJoystickButtons(dx, dy);
+  }
+
+  private updateJoystickButtons(dx: number, dy: number) {
+    if (!this.romLoaded()) return;
+
+    const newDirs = new Set<number>();
+    
+    if (Math.abs(dx) > this.JOYSTICK_DEADZONE || Math.abs(dy) > this.JOYSTICK_DEADZONE) {
+      if (dx < -this.JOYSTICK_DEADZONE) newDirs.add(Controller.BUTTON_LEFT);
+      if (dx > this.JOYSTICK_DEADZONE) newDirs.add(Controller.BUTTON_RIGHT);
+      if (dy < -this.JOYSTICK_DEADZONE) newDirs.add(Controller.BUTTON_UP);
+      if (dy > this.JOYSTICK_DEADZONE) newDirs.add(Controller.BUTTON_DOWN);
+    }
+
+    for (const btn of this.activeJoyDirs) {
+      if (!newDirs.has(btn)) {
+        this.nes.buttonUp(1, btn);
+      }
+    }
+    
+    for (const btn of newDirs) {
+      if (!this.activeJoyDirs.has(btn)) {
+        this.nes.buttonDown(1, btn);
+      }
+    }
+    
+    this.activeJoyDirs = newDirs;
   }
 }
