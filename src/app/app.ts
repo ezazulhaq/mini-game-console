@@ -35,6 +35,7 @@ export class App {
   romLoaded = signal(false);
   isPaused = signal(false);
   deferredPrompt = signal<Event | null>(null);
+  isTouchDevice = signal(true);
 
   currentGameId = signal<string | null>(null);
   hasSavedState = signal(false);
@@ -51,6 +52,7 @@ export class App {
   private frameId = 0;
   private frameCount = 0;
   private lastFpsTime = 0;
+  private lastGamepadState: Record<number, boolean> = {};
   private canvasCtx!: CanvasRenderingContext2D;
   private imageData!: ImageData;
   private buf!: ArrayBuffer;
@@ -60,6 +62,12 @@ export class App {
 
   constructor() {
     afterNextRender(() => {
+      this.isTouchDevice.set(
+        window.matchMedia('(pointer: coarse)').matches || 
+        'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0
+      );
+      
       this.canvasCtx = this.canvasRef.nativeElement.getContext('2d')!;
       this.imageData = this.canvasCtx.getImageData(0, 0, 256, 240);
       this.buf = new ArrayBuffer(this.imageData.data.length);
@@ -199,6 +207,8 @@ export class App {
 
     this.ngZone.runOutsideAngular(() => {
       const loop = (time: number) => {
+        this.updateGamepads();
+        
         if (!this.isPaused()) {
           this.nes.frame();
           this.frameCount++;
@@ -217,8 +227,101 @@ export class App {
     });
   }
 
+  updateGamepads() {
+    if (!navigator.getGamepads) return;
+    const gamepads = navigator.getGamepads();
+    const gp = gamepads[0] || gamepads[1] || gamepads[2] || gamepads[3];
+    
+    if (!gp) return;
+
+    const states: Record<number, boolean> = {
+      [Controller.BUTTON_A]: gp.buttons[0]?.pressed || gp.buttons[1]?.pressed || false,
+      [Controller.BUTTON_B]: gp.buttons[2]?.pressed || gp.buttons[3]?.pressed || false,
+      [Controller.BUTTON_SELECT]: gp.buttons[8]?.pressed || false,
+      [Controller.BUTTON_START]: gp.buttons[9]?.pressed || false,
+      [Controller.BUTTON_UP]: gp.buttons[12]?.pressed || (gp.axes[1] < -0.5) || false,
+      [Controller.BUTTON_DOWN]: gp.buttons[13]?.pressed || (gp.axes[1] > 0.5) || false,
+      [Controller.BUTTON_LEFT]: gp.buttons[14]?.pressed || (gp.axes[0] < -0.5) || false,
+      [Controller.BUTTON_RIGHT]: gp.buttons[15]?.pressed || (gp.axes[0] > 0.5) || false,
+    };
+
+    if (!this.romLoaded() || this.isPaused()) return;
+
+    for (const [btnStr, pressed] of Object.entries(states)) {
+      const btn = Number(btnStr);
+      if (pressed && !this.lastGamepadState[btn]) {
+        this.nes.buttonDown(1, btn);
+      } else if (!pressed && this.lastGamepadState[btn]) {
+        this.nes.buttonUp(1, btn);
+      }
+      this.lastGamepadState[btn] = pressed;
+    }
+  }
+
   togglePause() {
     this.isPaused.update((p) => !p);
+  }
+
+  restartGame() {
+    if (this.romLoaded()) {
+      this.nes.reset();
+      this.isPaused.set(false);
+    }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if (!this.romLoaded()) return;
+    const btn = this.mapKeyCode(event.code);
+    if (btn !== null) {
+      event.preventDefault();
+      this.nes.buttonDown(1, btn);
+    } else if (event.code === 'KeyP' || event.code === 'Escape') {
+      this.togglePause();
+    } else if (event.code === 'KeyR') {
+      this.restartGame();
+    }
+  }
+
+  @HostListener('window:keyup', ['$event'])
+  handleKeyUp(event: KeyboardEvent) {
+    if (!this.romLoaded()) return;
+    const btn = this.mapKeyCode(event.code);
+    if (btn !== null) {
+      event.preventDefault();
+      this.nes.buttonUp(1, btn);
+    }
+  }
+
+  private mapKeyCode(code: string): number | null {
+    switch (code) {
+      case 'ArrowUp':
+      case 'KeyW':
+        return Controller.BUTTON_UP;
+      case 'ArrowDown':
+      case 'KeyS':
+        return Controller.BUTTON_DOWN;
+      case 'ArrowLeft':
+      case 'KeyA':
+        return Controller.BUTTON_LEFT;
+      case 'ArrowRight':
+      case 'KeyD':
+        return Controller.BUTTON_RIGHT;
+      case 'Enter':
+        return Controller.BUTTON_START;
+      case 'ShiftLeft':
+      case 'ShiftRight':
+        return Controller.BUTTON_SELECT;
+      case 'KeyZ':
+      case 'KeyJ':
+        return Controller.BUTTON_B;
+      case 'KeyX':
+      case 'KeyK':
+      case 'Space':
+        return Controller.BUTTON_A;
+      default:
+        return null;
+    }
   }
   
   // Controller Handlers

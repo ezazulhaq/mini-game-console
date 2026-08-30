@@ -1,46 +1,25 @@
 <div class="flex h-screen w-full flex-col bg-zinc-950 font-sans text-zinc-200 overflow-hidden select-none touch-none">
   
-  <header class="flex h-16 w-full items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 sm:px-8 shrink-0">
-    <div class="flex items-center gap-3">
-      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-900/20">B</div>
-      <h1 class="text-lg font-semibold tracking-tight">BYOG <span class="text-zinc-500 font-normal">Emulator</span></h1>
-    </div>
-    <div class="flex items-center gap-3">
-      @if (deferredPrompt()) {
-        <button 
-          (click)="installApp()" 
-          class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700">
-          <mat-icon class="text-[18px] w-[18px] h-[18px]">download</mat-icon>
-          <span class="hidden sm:inline">Install Emulator</span>
-          <span class="sm:hidden">Install</span>
-        </button>
-      }
-      
-      @if (romLoaded()) {
-        <button 
-          (click)="returnToLibrary()"
-          class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 sm:px-5 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700">
-          <mat-icon class="text-[18px] w-[18px] h-[18px]">menu</mat-icon>
-          <span class="hidden sm:inline">Game Library</span>
-          <span class="sm:hidden">Menu</span>
-        </button>
-      } @else {
-        <label class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 sm:px-5 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700 cursor-pointer">
-          <mat-icon class="text-[18px] w-[18px] h-[18px]">folder_open</mat-icon>
-          <span class="hidden sm:inline">Custom ROM</span>
-          <span class="sm:hidden">Load</span>
-          <input type="file" accept=".nes" class="hidden" (change)="onFileSelected($event)" />
-        </label>
-      }
-    </div>
-  </header>
-
   <main class="flex flex-1 items-center justify-center p-2 sm:p-6 overflow-hidden">
     <!-- Gameboy-like container -->
-    <div class="relative flex h-full max-h-[750px] w-full max-w-[440px] flex-col rounded-[2rem] sm:rounded-[3.5rem] border-4 sm:border-8 border-zinc-800 bg-zinc-900 p-4 sm:p-8 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)]">
+    <div 
+      class="relative flex w-full max-w-[440px] flex-col rounded-[2rem] sm:rounded-[3.5rem] border-4 sm:border-8 border-zinc-800 bg-zinc-900 p-4 sm:p-8 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)]"
+      [class.h-full]="isTouchDevice()"
+      [class.max-h-[750px]]="isTouchDevice()"
+      [class.h-auto]="!isTouchDevice()">
       
       <div class="mb-4 flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-        <span>System v1.0.4</span>
+        @if (romLoaded()) {
+          <button 
+            (click)="returnToLibrary()"
+            title="Return to Game Library"
+            class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+            <mat-icon class="text-[14px] w-[14px] h-[14px]">arrow_back</mat-icon>
+            Library
+          </button>
+        } @else {
+          <span>System v1.0.4</span>
+        }
         <div class="flex items-center gap-2">
           @if (romLoaded()) {
             <button 
@@ -104,6 +83,33 @@
                   {{ loadError() }}
                 </div>
               }
+              
+              <label class="flex items-center justify-between p-2.5 rounded border border-dashed border-zinc-700 bg-zinc-900/50 hover:border-indigo-500/50 hover:bg-zinc-800/80 transition-all text-left group cursor-pointer mt-2">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0">
+                    <mat-icon class="text-zinc-600 text-[18px]">folder_open</mat-icon>
+                  </div>
+                  <span class="text-xs font-medium text-zinc-300">Load Custom ROM (.nes)</span>
+                </div>
+                <mat-icon class="text-zinc-700 text-[18px]">add</mat-icon>
+                <input type="file" accept=".nes" class="hidden" (change)="onFileSelected($event)" />
+              </label>
+
+              @if (deferredPrompt()) {
+                <button 
+                  (click)="installApp()" 
+                  class="flex items-center justify-center gap-2 p-2.5 rounded border border-zinc-700 bg-indigo-600 hover:bg-indigo-500 transition-colors mt-2 text-white font-medium text-xs">
+                  <mat-icon class="text-[16px] w-[16px] h-[16px]">download</mat-icon>
+                  Install App as PWA
+                </button>
+              }
+            </div>
+
+            <!-- Keyboard Hint -->
+            <div class="mt-auto pt-2 border-t border-zinc-800 text-center text-[9px] text-zinc-600 leading-tight">
+              <span class="block font-bold mb-1 text-zinc-500 uppercase tracking-widest">Keyboard Controls</span>
+              <span class="block"><b class="text-zinc-400">WASD/Arrows</b>: Move &nbsp;·&nbsp; <b class="text-zinc-400">Enter</b>: Start &nbsp;·&nbsp; <b class="text-zinc-400">Shift</b>: Select</span>
+              <span class="block"><b class="text-zinc-400">K/X/Space</b>: A &nbsp;·&nbsp; <b class="text-zinc-400">J/Z</b>: B &nbsp;·&nbsp; <b class="text-zinc-400">P/Esc</b>: Pause &nbsp;·&nbsp; <b class="text-zinc-400">R</b>: Restart</span>
             </div>
           </div>
         }
@@ -124,8 +130,9 @@
       </div>
 
       <!-- Controls -->
-      <div class="mt-8 sm:mt-12 flex flex-1 flex-col justify-between">
-        <div class="flex items-start justify-between px-2">
+      @if (isTouchDevice()) {
+        <div class="mt-8 sm:mt-12 flex flex-1 flex-col justify-between">
+          <div class="flex items-start justify-between px-2">
           
           <!-- D-Pad -->
           <div class="relative h-28 w-28 sm:h-32 sm:w-32">
@@ -210,17 +217,15 @@
           </div>
         </div>
       </div>
+      }
 
-      <div class="absolute bottom-6 sm:bottom-10 left-1/2 flex -translate-x-1/2 gap-1 pointer-events-none">
-        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
-        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
-        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
-      </div>
+      @if (isTouchDevice()) {
+        <div class="absolute bottom-6 sm:bottom-10 left-1/2 flex -translate-x-1/2 gap-1 pointer-events-none">
+          <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+          <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+          <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+        </div>
+      }
     </div>
   </main>
-
-  <footer class="flex h-10 w-full shrink-0 items-center justify-center bg-zinc-950 px-8 text-[10px] uppercase tracking-[0.2em] text-zinc-600">
-    <span class="hidden sm:inline">Offline Core Ready • Low Latency Engine • PWA Standalone Enabled</span>
-    <span class="sm:hidden">Offline PWA Enabled</span>
-  </footer>
 </div>
