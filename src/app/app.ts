@@ -149,6 +149,10 @@ export class App implements OnInit {
     this.romLoaded.set(false);
     this.currentGameId.set(null);
     this.hasSavedState.set(false);
+    if (this.frameId) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = 0;
+    }
     this.canvasCtx.clearRect(0, 0, 256, 240);
   }
 
@@ -189,6 +193,7 @@ export class App implements OnInit {
   }
 
   startLoop() {
+    if (this.frameId) cancelAnimationFrame(this.frameId);
     this.ngZone.runOutsideAngular(() => {
       const loop = () => {
         if (!this.isPaused()) {
