@@ -4,7 +4,6 @@ import {
   ElementRef,
   HostListener,
   NgZone,
-  OnInit,
   ViewChild,
   signal,
   inject,
@@ -27,7 +26,7 @@ export interface Game {
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
+export class App {
   @ViewChild('nesCanvas', {static: true}) canvasRef!: ElementRef<HTMLCanvasElement>;
   
   nes!: NES;
@@ -47,8 +46,11 @@ export class App implements OnInit {
   ]);
   isLoading = signal(false);
   loadError = signal('');
+  currentFps = signal(0);
   
   private frameId = 0;
+  private frameCount = 0;
+  private lastFpsTime = 0;
   private canvasCtx!: CanvasRenderingContext2D;
   private imageData!: ImageData;
   private buf!: ArrayBuffer;
@@ -84,9 +86,6 @@ export class App implements OnInit {
         },
       });
     });
-  }
-
-  ngOnInit() {
   }
 
   @HostListener('window:beforeinstallprompt', ['$event'])
@@ -194,10 +193,23 @@ export class App implements OnInit {
 
   startLoop() {
     if (this.frameId) cancelAnimationFrame(this.frameId);
+    this.frameCount = 0;
+    this.lastFpsTime = performance.now();
+    this.currentFps.set(0);
+
     this.ngZone.runOutsideAngular(() => {
-      const loop = () => {
+      const loop = (time: number) => {
         if (!this.isPaused()) {
           this.nes.frame();
+          this.frameCount++;
+          
+          if (time - this.lastFpsTime >= 1000) {
+            this.currentFps.set(this.frameCount);
+            this.frameCount = 0;
+            this.lastFpsTime = time;
+          }
+        } else {
+          this.lastFpsTime = time; // keep it updated while paused
         }
         this.frameId = requestAnimationFrame(loop);
       };

@@ -115,6 +115,12 @@
           [class.opacity-0]="!romLoaded()"
           [class.opacity-100]="romLoaded()">
         </canvas>
+        
+        @if (romLoaded()) {
+          <div class="absolute top-2 right-2 pointer-events-none rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-mono font-medium text-green-400 backdrop-blur-sm border border-white/10 z-20">
+            {{ currentFps() }} FPS
+          </div>
+        }
       </div>
 
       <!-- Controls -->
