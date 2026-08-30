@@ -50,7 +50,7 @@ export class App implements InputHandler {
     // Missing classic ROMs (Require user to upload)
     { id: 'smb3', title: 'Super Mario Bros. 3', url: '/roms/super_mario_bros_3.nes', isPlaceholder: true },
     { id: 'zelda', title: 'The Legend of Zelda', url: '/roms/legend_of_zelda.nes', isPlaceholder: true },
-    { id: 'contra', title: 'Contra', url: '/roms/contra.nes', isPlaceholder: true },
+    { id: 'contra', title: 'Contra', url: '/roms/contra.nes' },
     { id: 'smb', title: 'Super Mario Bros.', url: '/roms/super_mario_bros.nes', isPlaceholder: true },
     { id: 'mm2', title: 'Mega Man 2', url: '/roms/mega_man_2.nes', isPlaceholder: true },
     { id: 'punchout', title: 'Mike Tyson\'s Punch-Out!!', url: '/roms/punch_out.nes', isPlaceholder: true },
