@@ -164,10 +164,10 @@
               <div class="flex flex-col items-center gap-2">
                 <button 
                   aria-label="B Button"
-                  (touchstart)="onButtonDown(c.BUTTON_B, $event)" 
-                  (touchend)="onButtonUp(c.BUTTON_B, $event)"
-                  (mousedown)="onButtonDown(c.BUTTON_B, $event)" 
-                  (mouseup)="onButtonUp(c.BUTTON_B, $event)"
+                  (touchstart)="onTouchButtonDown(c.BUTTON_B, $event)" 
+                  (touchend)="onTouchButtonUp(c.BUTTON_B, $event)"
+                  (mousedown)="onTouchButtonDown(c.BUTTON_B, $event)" 
+                  (mouseup)="onTouchButtonUp(c.BUTTON_B, $event)"
                   class="h-14 w-14 rounded-full bg-zinc-800/80 border border-zinc-700 shadow-lg active:scale-95 touch-none backdrop-blur-md text-zinc-400 font-bold text-sm flex items-center justify-center">
                   B
                 </button>
@@ -175,10 +175,10 @@
               <div class="-mt-8 flex flex-col items-center gap-2">
                 <button 
                   aria-label="A Button"
-                  (touchstart)="onButtonDown(c.BUTTON_A, $event)" 
-                  (touchend)="onButtonUp(c.BUTTON_A, $event)"
-                  (mousedown)="onButtonDown(c.BUTTON_A, $event)" 
-                  (mouseup)="onButtonUp(c.BUTTON_A, $event)"
+                  (touchstart)="onTouchButtonDown(c.BUTTON_A, $event)" 
+                  (touchend)="onTouchButtonUp(c.BUTTON_A, $event)"
+                  (mousedown)="onTouchButtonDown(c.BUTTON_A, $event)" 
+                  (mouseup)="onTouchButtonUp(c.BUTTON_A, $event)"
                   class="h-14 w-14 rounded-full bg-indigo-600/90 border border-indigo-500 shadow-lg shadow-indigo-900/50 active:scale-95 touch-none backdrop-blur-md text-white font-bold text-sm flex items-center justify-center">
                   A
                 </button>
@@ -190,19 +190,19 @@
           <div class="flex justify-center gap-6 pb-2">
             <button 
               aria-label="Select"
-              (touchstart)="onButtonDown(c.BUTTON_SELECT, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_SELECT, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_SELECT, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_SELECT, $event)"
+              (touchstart)="onTouchButtonDown(c.BUTTON_SELECT, $event)" 
+              (touchend)="onTouchButtonUp(c.BUTTON_SELECT, $event)"
+              (mousedown)="onTouchButtonDown(c.BUTTON_SELECT, $event)" 
+              (mouseup)="onTouchButtonUp(c.BUTTON_SELECT, $event)"
               class="rounded-full bg-zinc-900 border border-zinc-800 px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 active:bg-zinc-800 touch-none shadow-sm flex items-center justify-center">
               Select
             </button>
             <button 
               aria-label="Start"
-              (touchstart)="onButtonDown(c.BUTTON_START, $event)" 
-              (touchend)="onButtonUp(c.BUTTON_START, $event)"
-              (mousedown)="onButtonDown(c.BUTTON_START, $event)" 
-              (mouseup)="onButtonUp(c.BUTTON_START, $event)"
+              (touchstart)="onTouchButtonDown(c.BUTTON_START, $event)" 
+              (touchend)="onTouchButtonUp(c.BUTTON_START, $event)"
+              (mousedown)="onTouchButtonDown(c.BUTTON_START, $event)" 
+              (mouseup)="onTouchButtonUp(c.BUTTON_START, $event)"
               class="rounded-full bg-zinc-900 border border-zinc-800 px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 active:bg-zinc-800 touch-none shadow-sm flex items-center justify-center">
               Start
             </button>
