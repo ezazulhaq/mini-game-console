@@ -8,9 +8,11 @@ import {
   ViewChild,
   signal,
   inject,
+  afterNextRender,
 } from '@angular/core';
 import {NES, Controller} from 'jsnes';
 import {MatIconModule} from '@angular/material/icon';
+import {saveStateToDB, loadStateFromDB} from './db';
 
 export interface Game {
   id: string;
@@ -35,6 +37,9 @@ export class App implements OnInit {
   isPaused = signal(false);
   deferredPrompt = signal<Event | null>(null);
 
+  currentGameId = signal<string | null>(null);
+  hasSavedState = signal(false);
+
   availableGames = signal<Game[]>([
     { id: '1', title: 'Super Homebrew Bros', url: '/roms/super-homebrew.nes' },
     { id: '2', title: 'Public Domain Quest', url: '/roms/pd-quest.nes' },
@@ -51,32 +56,37 @@ export class App implements OnInit {
   private buf32!: Uint32Array;
   private ngZone = inject(NgZone);
 
-  ngOnInit() {
-    this.canvasCtx = this.canvasRef.nativeElement.getContext('2d')!;
-    this.imageData = this.canvasCtx.getImageData(0, 0, 256, 240);
-    this.buf = new ArrayBuffer(this.imageData.data.length);
-    this.buf8 = new Uint8ClampedArray(this.buf);
-    this.buf32 = new Uint32Array(this.buf);
-    
-    // Set up jsnes
-    this.nes = new NES({
-      onFrame: (frameBuffer: number[]) => {
-        // Convert JSnes frame buffer (which is an array of 256*240 32-bit colors) to ImageData
-        let i = 0;
-        for (let y = 0; y < 240; ++y) {
-          for (let x = 0; x < 256; ++x) {
-            i = y * 256 + x;
-            // The NES palette is in 32-bit format but it might need to be converted to RGBA
-            this.buf32[i] = 0xff000000 | frameBuffer[i];
+  constructor() {
+    afterNextRender(() => {
+      this.canvasCtx = this.canvasRef.nativeElement.getContext('2d')!;
+      this.imageData = this.canvasCtx.getImageData(0, 0, 256, 240);
+      this.buf = new ArrayBuffer(this.imageData.data.length);
+      this.buf8 = new Uint8ClampedArray(this.buf);
+      this.buf32 = new Uint32Array(this.buf);
+      
+      // Set up jsnes
+      this.nes = new NES({
+        onFrame: (frameBuffer: number[]) => {
+          // Convert JSnes frame buffer (which is an array of 256*240 32-bit colors) to ImageData
+          let i = 0;
+          for (let y = 0; y < 240; ++y) {
+            for (let x = 0; x < 256; ++x) {
+              i = y * 256 + x;
+              // The NES palette is in 32-bit format but it might need to be converted to RGBA
+              this.buf32[i] = 0xff000000 | frameBuffer[i];
+            }
           }
-        }
-        this.imageData.data.set(this.buf8);
-        this.canvasCtx.putImageData(this.imageData, 0, 0);
-      },
-      onAudioSample: () => {
-        // Audio processing can be implemented here if needed
-      },
+          this.imageData.data.set(this.buf8);
+          this.canvasCtx.putImageData(this.imageData, 0, 0);
+        },
+        onAudioSample: () => {
+          // Audio processing can be implemented here if needed
+        },
+      });
     });
+  }
+
+  ngOnInit() {
   }
 
   @HostListener('window:beforeinstallprompt', ['$event'])
@@ -105,11 +115,13 @@ export class App implements OnInit {
     
     this.nes.loadROM(romData);
     this.romLoaded.set(true);
+    this.currentGameId.set(file.name);
     
     this.startLoop();
+    this.checkSavedState();
   }
 
-  async loadGameFromUrl(url: string) {
+  async loadGameFromUrl(url: string, id: string) {
     this.isLoading.set(true);
     this.loadError.set('');
     try {
@@ -120,8 +132,10 @@ export class App implements OnInit {
       
       this.nes.loadROM(romData);
       this.romLoaded.set(true);
+      this.currentGameId.set(id);
       this.isPaused.set(false);
       this.startLoop();
+      this.checkSavedState();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Error loading ROM';
       this.loadError.set(msg);
@@ -133,7 +147,45 @@ export class App implements OnInit {
   returnToLibrary() {
     this.isPaused.set(true);
     this.romLoaded.set(false);
+    this.currentGameId.set(null);
+    this.hasSavedState.set(false);
     this.canvasCtx.clearRect(0, 0, 256, 240);
+  }
+
+  async checkSavedState() {
+    const id = this.currentGameId();
+    if (!id) return;
+    try {
+      const state = await loadStateFromDB(id);
+      this.hasSavedState.set(!!state);
+    } catch (e) {
+      console.error('Failed to check saved state', e);
+    }
+  }
+
+  async saveState() {
+    const id = this.currentGameId();
+    if (!id || !this.romLoaded()) return;
+    try {
+      const state = (this.nes as unknown as { toJSON: () => unknown }).toJSON();
+      await saveStateToDB(id, state);
+      this.hasSavedState.set(true);
+    } catch (e) {
+      console.error('Failed to save state', e);
+    }
+  }
+
+  async loadState() {
+    const id = this.currentGameId();
+    if (!id || !this.romLoaded()) return;
+    try {
+      const state = await loadStateFromDB(id);
+      if (state) {
+        (this.nes as unknown as { fromJSON: (s: unknown) => void }).fromJSON(state);
+      }
+    } catch (e) {
+      console.error('Failed to load state', e);
+    }
   }
 
   startLoop() {

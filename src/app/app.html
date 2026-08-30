@@ -42,13 +42,29 @@
       <div class="mb-4 flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
         <span>System v1.0.4</span>
         <div class="flex items-center gap-2">
+          @if (romLoaded()) {
+            <button 
+              [disabled]="!hasSavedState()"
+              (click)="loadState()"
+              title="Load State"
+              class="text-zinc-500 hover:text-zinc-300 disabled:opacity-30 flex items-center justify-center">
+              <mat-icon class="text-[16px] w-[16px] h-[16px]">restore</mat-icon>
+            </button>
+            <button 
+              (click)="saveState()"
+              title="Save State"
+              class="text-zinc-500 hover:text-zinc-300 disabled:opacity-30 flex items-center justify-center">
+              <mat-icon class="text-[16px] w-[16px] h-[16px]">save</mat-icon>
+            </button>
+          }
           <button 
             [disabled]="!romLoaded()"
             (click)="togglePause()"
+            title="Pause/Play"
             class="text-zinc-500 hover:text-zinc-300 disabled:opacity-30 flex items-center justify-center">
             <mat-icon class="text-[16px] w-[16px] h-[16px]">{{ isPaused() ? 'play_arrow' : 'pause' }}</mat-icon>
           </button>
-          <div class="flex gap-1">
+          <div class="flex gap-1 ml-1">
             <div class="h-2 w-2 rounded-full bg-zinc-700"></div>
             <div class="h-2 w-2 rounded-full bg-green-500" [class.bg-red-500]="isPaused()"></div>
           </div>
@@ -70,7 +86,7 @@
               } @else {
                 @for (game of availableGames(); track game.id) {
                   <button 
-                    (click)="loadGameFromUrl(game.url)"
+                    (click)="loadGameFromUrl(game.url, game.id)"
                     class="flex items-center justify-between p-2.5 rounded border border-zinc-800 bg-zinc-900 hover:border-indigo-500/50 hover:bg-zinc-800/80 transition-all text-left group">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shrink-0">
