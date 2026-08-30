@@ -41,9 +41,9 @@ export class App implements OnInit {
   hasSavedState = signal(false);
 
   availableGames = signal<Game[]>([
-    { id: '1', title: 'Super Homebrew Bros', url: '/roms/super-homebrew.nes' },
-    { id: '2', title: 'Public Domain Quest', url: '/roms/pd-quest.nes' },
-    { id: '3', title: '8-Bit Classics', url: '/roms/8-bit-classics.nes' },
+    { id: '1', title: 'Driar (Platformer)', url: '/roms/driar.nes' },
+    { id: '2', title: 'Flappy Bird (Arcade)', url: '/roms/flappybird.nes' },
+    { id: '3', title: 'Lala the Magical (Adventure)', url: '/roms/lala.nes' },
   ]);
   isLoading = signal(false);
   loadError = signal('');
