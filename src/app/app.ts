@@ -12,6 +12,12 @@ import {
 import {NES, Controller} from 'jsnes';
 import {MatIconModule} from '@angular/material/icon';
 
+export interface Game {
+  id: string;
+  title: string;
+  url: string;
+}
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
@@ -28,6 +34,14 @@ export class App implements OnInit {
   romLoaded = signal(false);
   isPaused = signal(false);
   deferredPrompt = signal<Event | null>(null);
+
+  availableGames = signal<Game[]>([
+    { id: '1', title: 'Super Homebrew Bros', url: '/roms/super-homebrew.nes' },
+    { id: '2', title: 'Public Domain Quest', url: '/roms/pd-quest.nes' },
+    { id: '3', title: '8-Bit Classics', url: '/roms/8-bit-classics.nes' },
+  ]);
+  isLoading = signal(false);
+  loadError = signal('');
   
   private frameId = 0;
   private canvasCtx!: CanvasRenderingContext2D;
@@ -93,6 +107,33 @@ export class App implements OnInit {
     this.romLoaded.set(true);
     
     this.startLoop();
+  }
+
+  async loadGameFromUrl(url: string) {
+    this.isLoading.set(true);
+    this.loadError.set('');
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Could not load ROM. Did you place ${url}?`);
+      const buffer = await response.arrayBuffer();
+      const romData = Array.from(new Uint8Array(buffer)).map(byte => String.fromCharCode(byte)).join('');
+      
+      this.nes.loadROM(romData);
+      this.romLoaded.set(true);
+      this.isPaused.set(false);
+      this.startLoop();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Error loading ROM';
+      this.loadError.set(msg);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  returnToLibrary() {
+    this.isPaused.set(true);
+    this.romLoaded.set(false);
+    this.canvasCtx.clearRect(0, 0, 256, 240);
   }
 
   startLoop() {

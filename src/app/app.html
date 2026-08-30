@@ -16,12 +16,22 @@
         </button>
       }
       
-      <label class="flex items-center gap-2 rounded-full bg-indigo-600 px-4 sm:px-5 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 cursor-pointer">
-        <mat-icon class="text-[18px] w-[18px] h-[18px]">folder_open</mat-icon>
-        <span class="hidden sm:inline">Load .NES ROM</span>
-        <span class="sm:hidden">Load</span>
-        <input type="file" accept=".nes" class="hidden" (change)="onFileSelected($event)" />
-      </label>
+      @if (romLoaded()) {
+        <button 
+          (click)="returnToLibrary()"
+          class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 sm:px-5 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700">
+          <mat-icon class="text-[18px] w-[18px] h-[18px]">menu</mat-icon>
+          <span class="hidden sm:inline">Game Library</span>
+          <span class="sm:hidden">Menu</span>
+        </button>
+      } @else {
+        <label class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 sm:px-5 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700 cursor-pointer">
+          <mat-icon class="text-[18px] w-[18px] h-[18px]">folder_open</mat-icon>
+          <span class="hidden sm:inline">Custom ROM</span>
+          <span class="sm:hidden">Load</span>
+          <input type="file" accept=".nes" class="hidden" (change)="onFileSelected($event)" />
+        </label>
+      }
     </div>
   </header>
 
@@ -48,11 +58,37 @@
       <!-- Screen -->
       <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl border-4 border-zinc-950 bg-black shadow-inner">
         @if (!romLoaded()) {
-          <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950">
-            <div class="mb-2 text-zinc-700">
-              <mat-icon class="text-4xl opacity-50 w-10 h-10">videogame_asset</mat-icon>
+          <div class="absolute inset-0 flex flex-col bg-zinc-950 p-4 z-10">
+            <h2 class="text-[10px] font-bold text-zinc-500 mb-3 uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Game Library</h2>
+            
+            <div class="flex flex-col gap-2 w-full overflow-y-auto pb-2" style="scrollbar-width: none;">
+              @if (isLoading()) {
+                <div class="flex flex-col items-center justify-center py-8 gap-3 text-indigo-500">
+                  <mat-icon class="animate-spin text-3xl">autorenew</mat-icon>
+                  <span class="text-xs font-medium">Loading ROM...</span>
+                </div>
+              } @else {
+                @for (game of availableGames(); track game.id) {
+                  <button 
+                    (click)="loadGameFromUrl(game.url)"
+                    class="flex items-center justify-between p-2.5 rounded border border-zinc-800 bg-zinc-900 hover:border-indigo-500/50 hover:bg-zinc-800/80 transition-all text-left group">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shrink-0">
+                        <mat-icon class="text-zinc-600 group-hover:text-indigo-400 text-[18px]">sports_esports</mat-icon>
+                      </div>
+                      <span class="text-xs font-medium text-zinc-300 group-hover:text-white">{{ game.title }}</span>
+                    </div>
+                    <mat-icon class="text-zinc-700 group-hover:text-indigo-500 text-[18px]">play_arrow</mat-icon>
+                  </button>
+                }
+              }
+              
+              @if (loadError()) {
+                <div class="mt-2 p-2 rounded bg-red-950/30 border border-red-900/50 text-red-400 text-[10px] text-center">
+                  {{ loadError() }}
+                </div>
+              }
             </div>
-            <p class="text-center text-xs font-medium text-zinc-500">Ready for Input<br><span class="mt-1 block text-[10px] opacity-50 italic">Select a ROM to begin emulation</span></p>
           </div>
         }
         <canvas 
