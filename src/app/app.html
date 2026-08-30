@@ -1,155 +1,168 @@
-<div class="flex flex-col h-screen w-full bg-neutral-900 text-neutral-100 font-sans overflow-hidden select-none touch-none">
+<div class="flex h-screen w-full flex-col bg-zinc-950 font-sans text-zinc-200 overflow-hidden select-none touch-none">
   
-  <!-- Header / Navigation -->
-  <header class="flex items-center justify-between p-4 bg-neutral-800 shadow-md shrink-0">
-    <div class="flex items-center gap-2">
-      <mat-icon class="text-emerald-400">gamepad</mat-icon>
-      <h1 class="text-xl font-bold tracking-wider">RetroEMU</h1>
+  <header class="flex h-16 w-full items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 sm:px-8 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-900/20">B</div>
+      <h1 class="text-lg font-semibold tracking-tight">BYOG <span class="text-zinc-500 font-normal">Emulator</span></h1>
     </div>
-    
     <div class="flex items-center gap-3">
       @if (deferredPrompt()) {
         <button 
           (click)="installApp()" 
-          class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+          class="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-1.5 text-xs font-medium transition-colors hover:bg-zinc-700">
           <mat-icon class="text-[18px] w-[18px] h-[18px]">download</mat-icon>
-          Install Emulator
+          <span class="hidden sm:inline">Install Emulator</span>
+          <span class="sm:hidden">Install</span>
         </button>
       }
       
-      <label class="flex items-center gap-2 cursor-pointer bg-neutral-700 hover:bg-neutral-600 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+      <label class="flex items-center gap-2 rounded-full bg-indigo-600 px-4 sm:px-5 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 cursor-pointer">
         <mat-icon class="text-[18px] w-[18px] h-[18px]">folder_open</mat-icon>
-        Load ROM
+        <span class="hidden sm:inline">Load .NES ROM</span>
+        <span class="sm:hidden">Load</span>
         <input type="file" accept=".nes" class="hidden" (change)="onFileSelected($event)" />
       </label>
     </div>
   </header>
 
-  <!-- Game Canvas Section (Top Half) -->
-  <main class="flex-1 flex flex-col items-center justify-center p-2 bg-black min-h-0 relative">
-    @if (!romLoaded()) {
-      <div class="absolute inset-0 flex flex-col items-center justify-center text-neutral-500 gap-4">
-        <mat-icon class="text-6xl opacity-50">videogame_asset</mat-icon>
-        <p class="text-lg font-medium">Please load a .nes ROM file to play.</p>
+  <main class="flex flex-1 items-center justify-center p-2 sm:p-6 overflow-hidden">
+    <!-- Gameboy-like container -->
+    <div class="relative flex h-full max-h-[750px] w-full max-w-[440px] flex-col rounded-[2rem] sm:rounded-[3.5rem] border-4 sm:border-8 border-zinc-800 bg-zinc-900 p-4 sm:p-8 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)]">
+      
+      <div class="mb-4 flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+        <span>System v1.0.4</span>
+        <div class="flex items-center gap-2">
+          <button 
+            [disabled]="!romLoaded()"
+            (click)="togglePause()"
+            class="text-zinc-500 hover:text-zinc-300 disabled:opacity-30 flex items-center justify-center">
+            <mat-icon class="text-[16px] w-[16px] h-[16px]">{{ isPaused() ? 'play_arrow' : 'pause' }}</mat-icon>
+          </button>
+          <div class="flex gap-1">
+            <div class="h-2 w-2 rounded-full bg-zinc-700"></div>
+            <div class="h-2 w-2 rounded-full bg-green-500" [class.bg-red-500]="isPaused()"></div>
+          </div>
+        </div>
       </div>
-    }
-    <canvas 
-      #nesCanvas
-      width="256" 
-      height="240"
-      class="max-w-full max-h-full object-contain pixelated-canvas border-4 border-neutral-800 rounded-sm shadow-2xl transition-opacity duration-300"
-      [class.opacity-10]="!romLoaded()"
-      [class.opacity-100]="romLoaded()">
-    </canvas>
+
+      <!-- Screen -->
+      <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl border-4 border-zinc-950 bg-black shadow-inner">
+        @if (!romLoaded()) {
+          <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950">
+            <div class="mb-2 text-zinc-700">
+              <mat-icon class="text-4xl opacity-50 w-10 h-10">videogame_asset</mat-icon>
+            </div>
+            <p class="text-center text-xs font-medium text-zinc-500">Ready for Input<br><span class="mt-1 block text-[10px] opacity-50 italic">Select a ROM to begin emulation</span></p>
+          </div>
+        }
+        <canvas 
+          #nesCanvas
+          width="256" 
+          height="240"
+          class="h-full w-full object-contain pixelated-canvas transition-opacity duration-300"
+          [class.opacity-0]="!romLoaded()"
+          [class.opacity-100]="romLoaded()">
+        </canvas>
+      </div>
+
+      <!-- Controls -->
+      <div class="mt-8 sm:mt-12 flex flex-1 flex-col justify-between">
+        <div class="flex items-start justify-between px-2">
+          
+          <!-- D-Pad -->
+          <div class="relative h-28 w-28 sm:h-32 sm:w-32">
+            <button 
+              aria-label="Up"
+              (touchstart)="onButtonDown(c.BUTTON_UP, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_UP, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_UP, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_UP, $event)"
+              class="absolute left-1/2 top-0 h-10 sm:h-10 w-10 sm:w-10 -translate-x-1/2 rounded-t bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-start justify-center pt-1"></button>
+            <button 
+              aria-label="Down"
+              (touchstart)="onButtonDown(c.BUTTON_DOWN, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_DOWN, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_DOWN, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_DOWN, $event)"
+              class="absolute bottom-0 left-1/2 h-10 w-10 -translate-x-1/2 rounded-b bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-end justify-center pb-1"></button>
+            <button 
+              aria-label="Left"
+              (touchstart)="onButtonDown(c.BUTTON_LEFT, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_LEFT, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_LEFT, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_LEFT, $event)"
+              class="absolute left-0 top-1/2 h-10 w-10 -translate-y-1/2 rounded-l bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-center justify-start pl-1"></button>
+            <button 
+              aria-label="Right"
+              (touchstart)="onButtonDown(c.BUTTON_RIGHT, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_RIGHT, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_RIGHT, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_RIGHT, $event)"
+              class="absolute right-0 top-1/2 h-10 w-10 -translate-y-1/2 rounded-r bg-zinc-800 shadow-sm active:bg-zinc-700 touch-none flex items-center justify-end pr-1"></button>
+            <div class="absolute left-1/2 top-1/2 h-10 w-10 sm:h-12 sm:w-12 -translate-x-1/2 -translate-y-1/2 rounded bg-zinc-800 pointer-events-none"></div>
+            <div class="absolute left-1/2 top-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-700/50 bg-zinc-800 shadow-inner pointer-events-none"></div>
+          </div>
+
+          <!-- A/B Buttons -->
+          <div class="flex gap-3 sm:gap-4 pt-6 sm:pt-8">
+            <div class="flex flex-col items-center gap-1">
+              <button 
+                aria-label="B"
+                (touchstart)="onButtonDown(c.BUTTON_B, $event)" 
+                (touchend)="onButtonUp(c.BUTTON_B, $event)"
+                (mousedown)="onButtonDown(c.BUTTON_B, $event)" 
+                (mouseup)="onButtonUp(c.BUTTON_B, $event)"
+                class="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-zinc-800 shadow-[0_4px_0_0_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none touch-none"></button>
+              <span class="text-[10px] font-black text-zinc-600">B</span>
+            </div>
+            <div class="-mt-4 flex flex-col items-center gap-1">
+              <button 
+                aria-label="A"
+                (touchstart)="onButtonDown(c.BUTTON_A, $event)" 
+                (touchend)="onButtonUp(c.BUTTON_A, $event)"
+                (mousedown)="onButtonDown(c.BUTTON_A, $event)" 
+                (mouseup)="onButtonUp(c.BUTTON_A, $event)"
+                class="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-red-600 shadow-[0_4px_0_0_rgba(153,27,27,1)] active:translate-y-1 active:shadow-none touch-none"></button>
+              <span class="text-[10px] font-black text-zinc-600">A</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Select/Start -->
+        <div class="flex justify-center gap-8 sm:gap-10 pb-4">
+          <div class="flex flex-col items-center gap-1 mt-4">
+            <button 
+              aria-label="Select"
+              (touchstart)="onButtonDown(c.BUTTON_SELECT, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_SELECT, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_SELECT, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_SELECT, $event)"
+              class="h-3 w-10 sm:w-12 rotate-[-15deg] rounded-full bg-zinc-800 shadow-inner active:bg-zinc-700 touch-none"></button>
+            <span class="text-[8px] font-bold uppercase tracking-tighter text-zinc-600">Select</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 mt-4">
+            <button 
+              aria-label="Start"
+              (touchstart)="onButtonDown(c.BUTTON_START, $event)" 
+              (touchend)="onButtonUp(c.BUTTON_START, $event)"
+              (mousedown)="onButtonDown(c.BUTTON_START, $event)" 
+              (mouseup)="onButtonUp(c.BUTTON_START, $event)"
+              class="h-3 w-10 sm:w-12 rotate-[-15deg] rounded-full bg-zinc-800 shadow-inner active:bg-zinc-700 touch-none"></button>
+            <span class="text-[8px] font-bold uppercase tracking-tighter text-zinc-600">Start</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-6 sm:bottom-10 left-1/2 flex -translate-x-1/2 gap-1 pointer-events-none">
+        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+        <div class="h-1.5 w-6 rounded-full bg-zinc-800/50"></div>
+      </div>
+    </div>
   </main>
 
-  <!-- Controls Section (Bottom Half) -->
-  <section class="h-64 sm:h-72 bg-neutral-800 shrink-0 p-4 pb-8 flex flex-col justify-end relative shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-    
-    <!-- Pause / Menu buttons -->
-    <div class="absolute top-4 right-4 flex gap-2">
-      <button 
-        [disabled]="!romLoaded()"
-        (click)="togglePause()"
-        class="w-10 h-10 rounded-full bg-neutral-700 active:bg-neutral-600 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed text-neutral-300">
-        <mat-icon>{{ isPaused() ? 'play_arrow' : 'pause' }}</mat-icon>
-      </button>
-    </div>
-
-    <div class="flex items-center justify-between max-w-md w-full mx-auto mt-auto px-4">
-      
-      <!-- D-Pad -->
-      <div class="relative w-32 h-32">
-        <div class="absolute inset-0 bg-neutral-700 rounded-full opacity-20"></div>
-        <!-- Up -->
-        <button 
-          (touchstart)="onButtonDown(c.BUTTON_UP, $event)" 
-          (touchend)="onButtonUp(c.BUTTON_UP, $event)"
-          (mousedown)="onButtonDown(c.BUTTON_UP, $event)" 
-          (mouseup)="onButtonUp(c.BUTTON_UP, $event)"
-          class="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-12 bg-neutral-900 rounded-t-lg active:bg-neutral-950 flex items-start justify-center pt-1 touch-none">
-          <mat-icon class="text-neutral-600 scale-75">arrow_drop_up</mat-icon>
-        </button>
-        <!-- Down -->
-        <button 
-          (touchstart)="onButtonDown(c.BUTTON_DOWN, $event)" 
-          (touchend)="onButtonUp(c.BUTTON_DOWN, $event)"
-          (mousedown)="onButtonDown(c.BUTTON_DOWN, $event)" 
-          (mouseup)="onButtonUp(c.BUTTON_DOWN, $event)"
-          class="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-12 bg-neutral-900 rounded-b-lg active:bg-neutral-950 flex items-end justify-center pb-1 touch-none">
-          <mat-icon class="text-neutral-600 scale-75">arrow_drop_down</mat-icon>
-        </button>
-        <!-- Left -->
-        <button 
-          (touchstart)="onButtonDown(c.BUTTON_LEFT, $event)" 
-          (touchend)="onButtonUp(c.BUTTON_LEFT, $event)"
-          (mousedown)="onButtonDown(c.BUTTON_LEFT, $event)" 
-          (mouseup)="onButtonUp(c.BUTTON_LEFT, $event)"
-          class="absolute left-0 top-1/2 -translate-y-1/2 w-12 h-10 bg-neutral-900 rounded-l-lg active:bg-neutral-950 flex items-center justify-start pl-1 touch-none">
-          <mat-icon class="text-neutral-600 scale-75">arrow_left</mat-icon>
-        </button>
-        <!-- Right -->
-        <button 
-          (touchstart)="onButtonDown(c.BUTTON_RIGHT, $event)" 
-          (touchend)="onButtonUp(c.BUTTON_RIGHT, $event)"
-          (mousedown)="onButtonDown(c.BUTTON_RIGHT, $event)" 
-          (mouseup)="onButtonUp(c.BUTTON_RIGHT, $event)"
-          class="absolute right-0 top-1/2 -translate-y-1/2 w-12 h-10 bg-neutral-900 rounded-r-lg active:bg-neutral-950 flex items-center justify-end pr-1 touch-none">
-          <mat-icon class="text-neutral-600 scale-75">arrow_right</mat-icon>
-        </button>
-        <!-- Center Square -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-neutral-900 pointer-events-none"></div>
-      </div>
-
-      <!-- Start / Select -->
-      <div class="flex flex-col gap-6 items-center justify-center self-end mb-4">
-        <div class="flex flex-col items-center gap-1">
-          <button 
-            aria-label="Select"
-            (touchstart)="onButtonDown(c.BUTTON_SELECT, $event)" 
-            (touchend)="onButtonUp(c.BUTTON_SELECT, $event)"
-            (mousedown)="onButtonDown(c.BUTTON_SELECT, $event)" 
-            (mouseup)="onButtonUp(c.BUTTON_SELECT, $event)"
-            class="w-12 h-4 bg-neutral-900 rounded-full active:bg-neutral-950 touch-none"></button>
-          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Select</span>
-        </div>
-        <div class="flex flex-col items-center gap-1">
-          <button 
-            aria-label="Start"
-            (touchstart)="onButtonDown(c.BUTTON_START, $event)" 
-            (touchend)="onButtonUp(c.BUTTON_START, $event)"
-            (mousedown)="onButtonDown(c.BUTTON_START, $event)" 
-            (mouseup)="onButtonUp(c.BUTTON_START, $event)"
-            class="w-12 h-4 bg-neutral-900 rounded-full active:bg-neutral-950 touch-none"></button>
-          <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Start</span>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="relative w-32 h-24 flex items-center justify-between">
-        <div class="flex flex-col items-center gap-1 mt-10">
-          <button 
-            aria-label="B"
-            (touchstart)="onButtonDown(c.BUTTON_B, $event)" 
-            (touchend)="onButtonUp(c.BUTTON_B, $event)"
-            (mousedown)="onButtonDown(c.BUTTON_B, $event)" 
-            (mouseup)="onButtonUp(c.BUTTON_B, $event)"
-            class="w-14 h-14 bg-red-600 rounded-full border-b-4 border-red-800 active:border-b-0 active:translate-y-1 touch-none shadow-lg shadow-red-900/50"></button>
-          <span class="text-xs font-bold text-neutral-500 uppercase">B</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 mb-10">
-          <button 
-            aria-label="A"
-            (touchstart)="onButtonDown(c.BUTTON_A, $event)" 
-            (touchend)="onButtonUp(c.BUTTON_A, $event)"
-            (mousedown)="onButtonDown(c.BUTTON_A, $event)" 
-            (mouseup)="onButtonUp(c.BUTTON_A, $event)"
-            class="w-14 h-14 bg-red-600 rounded-full border-b-4 border-red-800 active:border-b-0 active:translate-y-1 touch-none shadow-lg shadow-red-900/50"></button>
-          <span class="text-xs font-bold text-neutral-500 uppercase">A</span>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
+  <footer class="flex h-10 w-full shrink-0 items-center justify-center bg-zinc-950 px-8 text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+    <span class="hidden sm:inline">Offline Core Ready • Low Latency Engine • PWA Standalone Enabled</span>
+    <span class="sm:hidden">Offline PWA Enabled</span>
+  </footer>
 </div>
